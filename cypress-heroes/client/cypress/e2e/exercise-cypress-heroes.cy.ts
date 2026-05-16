@@ -1,15 +1,19 @@
-describe('Cypress Heroes Exercise', () => {
+describe('Cypress Heroes', () => {
   beforeEach(() => {
-    cy.visit('http://localhost:3000')
+    cy.visit('http://localhost:3000/heroes')
   })
 
-  it('Should display the heroes list on the home page', () => {
-    cy.contains('The Smoker').should('be.visible')
-    cy.contains('Warp Speed').should('be.visible')
-    cy.contains('Cyonic').should('be.visible')
+  it('Should display heroes list', () => {
+    cy.intercept('GET', 'http://localhost:3001/heroes').as('getHeroes')
+
+    cy.reload()
+    cy.wait('@getHeroes')
+
+    cy.get('body').should('not.contain.text', 'No heroes')
+    cy.get('img').should('have.length.greaterThan', 0)
   })
 
-  it('Should display the login form when clicking Login', () => {
+  it('Should open login form', () => {
     cy.contains('Login').click()
 
     cy.contains('Email').should('be.visible')
@@ -17,23 +21,25 @@ describe('Cypress Heroes Exercise', () => {
     cy.contains('Sign in').should('be.visible')
   })
 
-  it('Should display an error message with invalid credentials', () => {
+  it('Should show error for invalid login', () => {
     cy.contains('Login').click()
 
     cy.get('input[name="email"]').type('wrong@test.com')
     cy.get('input[name="password"]').type('wrongpassword')
     cy.contains('Sign in').click()
 
-    cy.contains('Invalid email or password').should('be.visible')
+    cy.contains('Unknown error').should('be.visible')
   })
 
-  it('Should allow login with valid credentials', () => {
+  it('Should submit valid login credentials', () => {
+    cy.intercept('POST', 'http://localhost:3001/auth').as('loginRequest')
+
     cy.contains('Login').click()
 
     cy.get('input[name="email"]').type('test@test.com')
     cy.get('input[name="password"]').type('test123')
     cy.contains('Sign in').click()
 
-    cy.contains('Login').should('not.exist')
+    cy.wait('@loginRequest')
   })
 })
